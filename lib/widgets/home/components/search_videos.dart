@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:yt_converter/main.dart';
 
 Container searchVideos(
-    List<String> dynamicHeightSuggestion, TextEditingController controller) {
+    List<String> suggestions, TextEditingController controller,
+    {required Function(String) onSearch, required Function() onClear}) {
   return Container(
     width: mq.width * 0.8,
     decoration: BoxDecoration(
@@ -26,7 +27,10 @@ Container searchVideos(
         prefixIcon: const Icon(Icons.search, color: Colors.grey),
         suffixIcon: IconButton(
           icon: const Icon(Icons.clear, color: Colors.grey),
-          onPressed: () => controller.clear(),
+          onPressed: () {
+            controller.clear();
+            onClear();
+          },
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
@@ -53,12 +57,15 @@ Container searchVideos(
           ),
         ],
       ),
-      maxSuggestionBoxHeight: 200,
-      suggestions:
-          dynamicHeightSuggestion.map(SearchFieldListItem<String>.new).toList(),
+      maxSuggestionBoxHeight: 300,
+      dynamicHeight: true,
+      suggestions: suggestions.map(SearchFieldListItem<String>.new).toList(),
       suggestionState: Suggestion.expand,
       onSuggestionTap: (suggestion) {
-        // Handle suggestion tap
+        onSearch(suggestion.searchKey);
+      },
+      onSubmit: (value) {
+        onSearch(value);
       },
     ),
   );

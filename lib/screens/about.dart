@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 // widgets
 import 'package:yt_converter/widgets/about/components/appbar.dart';
 import 'package:yt_converter/widgets/about/components/content.dart';
+import 'package:yt_converter/widgets/about/components/icon_1.dart';
 import 'package:yt_converter/widgets/about/components/image.dart';
 import 'package:yt_converter/widgets/about/components/label.dart';
 
@@ -43,6 +44,12 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
           Animate(
             effects: const [FadeEffect(), ScaleEffect()],
             child: content(),
+          ),
+
+          // icon_1
+          Animate(
+            effects: const [FadeEffect(), ScaleEffect()],
+            child: icon_1(),
           ),
         ]));
   }

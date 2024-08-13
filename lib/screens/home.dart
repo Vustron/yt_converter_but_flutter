@@ -4,12 +4,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter/material.dart';
 import 'package:yt_converter/main.dart';
 
-// widgets
-import 'package:yt_converter/widgets/home/components/search_videos.dart';
-import 'package:yt_converter/widgets/splash/components/logo.dart';
-import 'package:yt_converter/widgets/splash/components/title.dart';
+// services
+import 'package:yt_converter/services/search.dart';
 
 // widgets
+import 'package:yt_converter/widgets/home/components/search_videos.dart';
+import 'package:yt_converter/widgets/splash/components/title.dart';
+import 'package:yt_converter/widgets/splash/components/logo.dart';
 
 // home screen
 class HomeScreen extends ConsumerStatefulWidget {
@@ -34,9 +35,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // ini media query size
     mq = MediaQuery.of(context).size;
 
-    final dynamicHeightSuggestion = [
-      'ABC',
-    ];
+    // init search
+    final searchState = ref.watch(searchServiceProvider);
+    final searchResults = searchState.videos;
+    final isLoading = searchState.isLoading;
 
     return Scaffold(
         body: Stack(children: [
@@ -56,16 +58,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // space
               const SizedBox(height: 10),
 
+              // search videos
               Animate(
                 effects: const [FadeEffect(), ScaleEffect()],
-                child: searchVideos(dynamicHeightSuggestion, _searchController),
-              )
+                child: searchVideos(
+                  searchResults.map((video) => video.title).toList(),
+                  _searchController,
+                  onSearch: (query) {
+                    ref
+                        .read(searchServiceProvider.notifier)
+                        .searchYouTube(query);
+                  },
+                  onClear: () {
+                    ref.read(searchServiceProvider.notifier).clearSearch();
+                  },
+                ),
+              ),
+              // loading indicator
+              if (isLoading) const CircularProgressIndicator(),
             ],
           ),
         ),
       ),
-
-      // App Text
     ]));
   }
 }

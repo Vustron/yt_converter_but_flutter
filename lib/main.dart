@@ -1,5 +1,6 @@
 // utils
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -12,7 +13,7 @@ import 'config/appbar_theme.dart';
 // global object for accessing device screen size
 late Size mq;
 
-void main() {
+void main() async {
   // init flutter widget binding
   WidgetsFlutterBinding.ensureInitialized();
   // Enter full-screen
@@ -21,7 +22,9 @@ void main() {
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
-  ]).then((value) {
+  ]).then((value) async {
+    // consume dotenv
+    await dotenv.load(fileName: ".env");
     // run app
     runApp(const ProviderScope(child: App()));
   });
@@ -41,6 +44,7 @@ class App extends ConsumerWidget {
       theme: ThemeData(
         appBarTheme: appBarConfig(),
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.black),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
         useMaterial3: true,
       ),
       home: const SplashScreen(),
