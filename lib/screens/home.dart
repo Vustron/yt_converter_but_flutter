@@ -1,8 +1,12 @@
 // utils
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter/material.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:yt_converter/main.dart';
+import 'package:flutter/material.dart';
+
+// screens
+import 'package:yt_converter/screens/results.dart';
 
 // services
 import 'package:yt_converter/services/search.dart';
@@ -24,10 +28,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // init text controller
   final TextEditingController _searchController = TextEditingController();
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  // init search field key
+  final GlobalKey _searchFieldKey = GlobalKey();
+
+  void _onSearch(String query) {
+    ref.read(searchServiceProvider.notifier).searchYouTube(query);
+    Navigator.pushReplacement(
+        context,
+        PageTransition(
+          type: PageTransitionType.scale,
+          alignment: Alignment.bottomCenter,
+          child: ResultScreen(searchQuery: query),
+        ));
   }
 
   @override
@@ -38,7 +50,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // init search
     final searchState = ref.watch(searchServiceProvider);
     final searchResults = searchState.videos;
-    final isLoading = searchState.isLoading;
 
     return Scaffold(
         body: Stack(children: [
@@ -62,20 +73,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Animate(
                 effects: const [FadeEffect(), ScaleEffect()],
                 child: searchVideos(
+                  _searchFieldKey,
                   searchResults.map((video) => video.title).toList(),
                   _searchController,
-                  onSearch: (query) {
-                    ref
-                        .read(searchServiceProvider.notifier)
-                        .searchYouTube(query);
-                  },
+                  onSearch: _onSearch,
                   onClear: () {
                     ref.read(searchServiceProvider.notifier).clearSearch();
                   },
                 ),
               ),
-              // loading indicator
-              if (isLoading) const CircularProgressIndicator(),
             ],
           ),
         ),

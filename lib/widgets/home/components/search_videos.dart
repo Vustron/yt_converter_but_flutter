@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:yt_converter/main.dart';
 
 Container searchVideos(
-    List<String> suggestions, TextEditingController controller,
+    GlobalKey key, List<String> suggestions, TextEditingController controller,
     {required Function(String) onSearch, required Function() onClear}) {
   return Container(
     width: mq.width * 0.8,
@@ -21,6 +21,7 @@ Container searchVideos(
       ],
     ),
     child: SearchField(
+      key: key,
       controller: controller,
       hint: 'Search videos',
       searchInputDecoration: InputDecoration(

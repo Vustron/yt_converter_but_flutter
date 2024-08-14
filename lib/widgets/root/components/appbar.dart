@@ -41,7 +41,7 @@ PreferredSize appbar({
               fontWeight: FontWeight.bold,
             ),
           ),
-            actions: [
+          actions: [
             IconButton(
               icon: const Icon(Icons.info_outline, color: Colors.black),
               onPressed: onAboutPressed,
@@ -49,7 +49,6 @@ PreferredSize appbar({
             ),
           ],
         ),
-        
       ),
     ),
   );
