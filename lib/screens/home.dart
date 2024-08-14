@@ -31,6 +31,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // init search field key
   final GlobalKey _searchFieldKey = GlobalKey();
 
+  // init focus node
+  final FocusNode _searchFocusNode = FocusNode();
+
+  //  init search focus
+  bool _isSearchFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchFocusNode.addListener(() {
+      setState(() {
+        _isSearchFocused = _searchFocusNode.hasFocus;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
   void _onSearch(String query) {
     ref.read(searchServiceProvider.notifier).searchYouTube(query);
     Navigator.pushReplacement(
@@ -42,6 +65,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ));
   }
 
+  void _clearSearch() {
+    _searchController.clear();
+    ref.read(searchServiceProvider.notifier).clearSearch();
+  }
+
   @override
   Widget build(BuildContext context) {
     // ini media query size
@@ -51,41 +79,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final searchState = ref.watch(searchServiceProvider);
     final searchResults = searchState.videos;
 
-    return Scaffold(
-        body: Stack(children: [
-      logo(),
-      // App Text
-      Positioned(
-        bottom: mq.height * .36,
-        width: mq.width,
-        // duration: const Duration(seconds: 1),
-        child: Center(
-          child: Column(
-            children: [
-              // title
-              Animate(
-                  effects: const [FadeEffect(), ScaleEffect()], child: title()),
-
-              // space
-              const SizedBox(height: 10),
-
-              // search videos
-              Animate(
-                effects: const [FadeEffect(), ScaleEffect()],
-                child: searchVideos(
-                  _searchFieldKey,
-                  searchResults.map((video) => video.title).toList(),
-                  _searchController,
-                  onSearch: _onSearch,
-                  onClear: () {
-                    ref.read(searchServiceProvider.notifier).clearSearch();
-                  },
+    return GestureDetector(
+      onTap: () {
+        _clearSearch();
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        body: SingleChildScrollView(
+          child: SizedBox(
+            height: mq.height,
+            child: Stack(
+              children: [
+                logo(),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  padding: EdgeInsets.only(
+                      top: 100,
+                      bottom: _isSearchFocused ? 0 : mq.height * 0.001),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (!_isSearchFocused) ...[
+                          Animate(
+                            effects: const [FadeEffect(), ScaleEffect()],
+                            child: title(),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                        Animate(
+                          effects: const [FadeEffect(), ScaleEffect()],
+                          child: searchVideos(
+                            _searchFieldKey,
+                            searchResults.map((video) => video.title).toList(),
+                            _searchController,
+                            focusNode: _searchFocusNode,
+                            onSearch: _onSearch,
+                            onClear: _clearSearch,
+                            onFocus: _clearSearch,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ]));
+    );
   }
 }

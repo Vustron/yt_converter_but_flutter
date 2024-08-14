@@ -4,8 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:yt_converter/main.dart';
 
 Container searchVideos(
-    GlobalKey key, List<String> suggestions, TextEditingController controller,
-    {required Function(String) onSearch, required Function() onClear}) {
+  GlobalKey key,
+  List<String> suggestions,
+  TextEditingController controller, {
+  required Function(String) onSearch,
+  required Function() onClear,
+  required Function() onFocus,
+  required FocusNode focusNode,
+}) {
   return Container(
     width: mq.width * 0.8,
     decoration: BoxDecoration(
@@ -23,6 +29,7 @@ Container searchVideos(
     child: SearchField(
       key: key,
       controller: controller,
+      focusNode: focusNode,
       hint: 'Search videos',
       searchInputDecoration: InputDecoration(
         prefixIcon: const Icon(Icons.search, color: Colors.grey),
@@ -65,9 +72,7 @@ Container searchVideos(
       onSuggestionTap: (suggestion) {
         onSearch(suggestion.searchKey);
       },
-      onSubmit: (value) {
-        onSearch(value);
-      },
+      onSubmit: onSearch,
     ),
   );
 }

@@ -2,13 +2,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:flutter/material.dart';
-import 'package:yt_converter/screens/root.dart';
 
 // services
 import 'package:yt_converter/services/search.dart';
 
+// screens
+import 'package:yt_converter/screens/root.dart';
+
 // widgets
 import 'package:yt_converter/widgets/results/components/appbar.dart';
+
+// methods
+import 'package:yt_converter/widgets/results/methods/download_options.dart';
 
 class ResultScreen extends ConsumerWidget {
   // init search query
@@ -27,6 +32,7 @@ class ResultScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: appbar(searchQuery, onHomePressed: () {
+        ref.read(searchServiceProvider.notifier).clearSearch();
         Navigator.pushReplacement(
             context,
             PageTransition(
@@ -43,10 +49,22 @@ class ResultScreen extends ConsumerWidget {
                 final video = searchResults[index];
                 return ListTile(
                   leading: Image.network(video.thumbnailUrl),
-                  title: Text(video.title),
-                  subtitle: Text(video.channelTitle),
+                  title: Text(
+                    video.title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    video.channelTitle,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
                   onTap: () {
-                    // Handle video selection
+                    downloadOptions(context, video.videoId, ref);
                   },
                 );
               },

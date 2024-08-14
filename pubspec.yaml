@@ -31,6 +31,7 @@ dependencies:
   youtube_explode_dart: ^1.10.4
   http: ^0.13.6
   flutter_dotenv: ^5.1.0
+  fluttertoast: ^8.2.5
 
 dev_dependencies:
   flutter_native_splash: ^2.3.8

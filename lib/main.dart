@@ -40,11 +40,10 @@ class App extends ConsumerWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Yt Converter',
-      themeMode: ThemeMode.light,
+      themeMode: ThemeMode.dark,
       theme: ThemeData(
         appBarTheme: appBarConfig(),
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.black),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
         useMaterial3: true,
       ),
       home: const SplashScreen(),
