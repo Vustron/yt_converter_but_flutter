@@ -1,5 +1,6 @@
 // utils
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:yt_converter/utils/permissions.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,8 +17,13 @@ late Size mq;
 void main() async {
   // init flutter widget binding
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Check and request permissions
+  await checkAndRequestPermissions();
+
   // Enter full-screen
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
   // for setting orientations to portrait only
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

@@ -3,7 +3,9 @@
     "ARGB",
     "cupertino",
     "dotenv",
+    "filex",
     "muxed",
+    "prefs",
     "unfocus"
   ]
 }

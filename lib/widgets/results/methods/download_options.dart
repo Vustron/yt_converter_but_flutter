@@ -4,7 +4,7 @@ import 'package:yt_converter/services/download.dart';
 import 'package:flutter/material.dart';
 
 Future<void> downloadOptions(
-    BuildContext context, String videoId, WidgetRef ref) {
+    BuildContext context, String videoUrl, WidgetRef ref) {
   return showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -21,7 +21,9 @@ Future<void> downloadOptions(
           children: [
             ElevatedButton.icon(
               onPressed: () {
-                ref.read(downloadServiceProvider).downloadMp3(videoId, context);
+                ref
+                    .read(downloadServiceProvider)
+                    .downloadMp3(videoUrl, context);
                 Navigator.pop(context);
               },
               icon: const Icon(Icons.music_note, color: Colors.black),
@@ -32,7 +34,9 @@ Future<void> downloadOptions(
             ),
             ElevatedButton.icon(
               onPressed: () {
-                ref.read(downloadServiceProvider).downloadMp4(videoId, context);
+                ref
+                    .read(downloadServiceProvider)
+                    .downloadMp4(videoUrl, context);
                 Navigator.pop(context);
               },
               icon: const Icon(Icons.video_library, color: Colors.black),

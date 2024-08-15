@@ -64,7 +64,9 @@ class ResultScreen extends ConsumerWidget {
                     ),
                   ),
                   onTap: () {
-                    downloadOptions(context, video.videoId, ref);
+                    String videoUrl =
+                        'https://www.youtube.com/watch?v=${video.videoId}';
+                    downloadOptions(context, videoUrl, ref);
                   },
                 );
               },
