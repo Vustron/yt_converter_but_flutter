@@ -8,19 +8,24 @@ import 'package:path_provider/path_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
+import 'dart:developer';
 import 'dart:io';
 
+// download progress provider
 final downloadProgressProvider =
     StateNotifierProvider.family<DownloadProgressNotifier, double?, String>(
         (ref, videoUrl) => DownloadProgressNotifier());
 
 class DownloadProgressNotifier extends StateNotifier<double?> {
+  // init progress notifier
   DownloadProgressNotifier() : super(null);
 
+  // progress method
   void setProgress(double progress) {
     state = progress;
   }
 
+  // reset method
   void reset() {
     state = null;
   }
@@ -30,19 +35,28 @@ class DownloadProgressNotifier extends StateNotifier<double?> {
 final downloadServiceProvider = Provider((ref) => DownloadService(ref));
 
 class DownloadService {
+  // init ref
   final Ref _ref;
+
+  // init youtube explode
   final YoutubeExplode _yt;
 
+  // init download service
   DownloadService(this._ref) : _yt = YoutubeExplode();
 
+  // request permission method
   Future<bool> _requestPermissions() async {
-    var status = await Permission.storage.status;
-    if (!status.isGranted) {
-      status = await Permission.storage.request();
+    if (Platform.isAndroid) {
+      var statusStorage = await Permission.storage.status;
+      if (!statusStorage.isGranted) {
+        statusStorage = await Permission.storage.request();
+      }
+      return statusStorage.isGranted;
     }
-    return status.isGranted;
+    return true;
   }
 
+  // save downloads record method
   Future<void> _saveDownloadRecord(String filePath) async {
     final prefs = await SharedPreferences.getInstance();
     List<String>? downloads = prefs.getStringList('downloads');
@@ -51,11 +65,13 @@ class DownloadService {
     await prefs.setStringList('downloads', downloads);
   }
 
+  // get downloads method
   Future<List<String>> getDownloadRecords() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getStringList('downloads') ?? [];
   }
 
+  // download mp3 method
   Future<void> downloadMp3(String videoUrl, BuildContext context) async {
     if (!await _requestPermissions()) {
       Fluttertoast.showToast(
@@ -100,6 +116,7 @@ class DownloadService {
     }
   }
 
+  // download mp4 method
   Future<void> downloadMp4(String videoUrl, BuildContext context) async {
     if (!await _requestPermissions()) {
       Fluttertoast.showToast(
@@ -154,12 +171,29 @@ class DownloadService {
     }
   }
 
+  // download directory
   Future<Directory> _getDownloadDirectory() async {
-    var dir = await getExternalStorageDirectory();
-    var downloadDir = Directory(path.join(dir!.path, 'downloads'));
-    if (!await downloadDir.exists()) {
-      await downloadDir.create(recursive: true);
+    Directory? directory;
+    try {
+      if (Platform.isAndroid) {
+        // For Android, use the Downloads directory
+        directory = Directory('/storage/emulated/0/Download');
+      } else if (Platform.isIOS) {
+        // For iOS, we'll use the Documents directory
+        directory = await getApplicationDocumentsDirectory();
+      }
+
+      // Create a subdirectory for our app if it doesn't exist
+      var appDir = Directory('${directory!.path}/YTConverter');
+      if (!await appDir.exists()) {
+        await appDir.create(recursive: true);
+      }
+
+      return appDir;
+    } catch (e) {
+      log('Failed to get download directory: $e');
+      // Fallback to the app's directory if we can't access the Downloads folder
+      return await getApplicationDocumentsDirectory();
     }
-    return downloadDir;
   }
 }

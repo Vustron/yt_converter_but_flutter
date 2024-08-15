@@ -32,7 +32,6 @@ dependencies:
   android_intent_plus: ^5.1.0
   open_filex: ^4.5.0
   share_plus: ^10.0.1
-  image_gallery_saver: ^2.0.3
 
 dev_dependencies:
   flutter_native_splash: ^2.3.8
