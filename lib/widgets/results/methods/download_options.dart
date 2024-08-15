@@ -1,7 +1,9 @@
 // utils
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:yt_converter/services/download.dart';
 import 'package:flutter/material.dart';
+
+// services
+import 'package:yt_converter/services/download.dart';
 
 Future<void> downloadOptions(
     BuildContext context, String videoUrl, WidgetRef ref) {

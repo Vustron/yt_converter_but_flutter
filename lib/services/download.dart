@@ -1,6 +1,8 @@
+// utils
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:yt_converter/utils/sanitize_filename.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -8,15 +10,30 @@ import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 import 'dart:io';
 
-// screens
-import 'package:yt_converter/screens/downloads.dart';
+final downloadProgressProvider =
+    StateNotifierProvider.family<DownloadProgressNotifier, double?, String>(
+        (ref, filePath) => DownloadProgressNotifier());
 
-final downloadServiceProvider = Provider((ref) => DownloadService());
+class DownloadProgressNotifier extends StateNotifier<double?> {
+  DownloadProgressNotifier() : super(null);
+
+  void setProgress(double progress) {
+    state = progress;
+  }
+
+  void reset() {
+    state = null;
+  }
+}
+
+// Define provider
+final downloadServiceProvider = Provider((ref) => DownloadService(ref));
 
 class DownloadService {
+  final Ref _ref;
   final YoutubeExplode _yt;
 
-  DownloadService() : _yt = YoutubeExplode();
+  DownloadService(this._ref) : _yt = YoutubeExplode();
 
   Future<bool> _requestPermissions() async {
     var status = await Permission.storage.status;
@@ -54,28 +71,32 @@ class DownloadService {
     var audioStream = _yt.videos.streamsClient.get(audioStreamInfo);
 
     var dir = await _getDownloadDirectory();
-    var sanitizedTitle = _sanitizeFilename(video.title);
+    var sanitizedTitle = sanitizeFilename(video.title);
     var file = File(path.join(dir.path, '$sanitizedTitle.mp3'));
     var fileStream = file.openWrite();
 
+    var total = audioStreamInfo.size.totalBytes;
+    var downloaded = 0;
+
     await for (var data in audioStream) {
       fileStream.add(data);
-      // Update the progress here if necessary
+      downloaded += data.length;
+      _ref
+          .read(downloadProgressProvider(file.path).notifier)
+          .setProgress(downloaded / total);
     }
 
     await fileStream.flush();
     await fileStream.close();
 
     await _saveDownloadRecord(file.path);
+    _ref.read(downloadProgressProvider(file.path).notifier).reset();
 
     if (context.mounted) {
       Fluttertoast.showToast(
           msg: "MP3 downloaded to ${file.path}",
           toastLength: Toast.LENGTH_LONG,
           gravity: ToastGravity.BOTTOM);
-
-      Navigator.push(context,
-          MaterialPageRoute(builder: (context) => const DownloadsScreen()));
     }
   }
 
@@ -87,8 +108,6 @@ class DownloadService {
           gravity: ToastGravity.BOTTOM);
       return;
     }
-
-    print("Starting MP4 download for video URL: $videoUrl");
 
     var video = await _yt.videos.get(videoUrl);
 
@@ -106,30 +125,32 @@ class DownloadService {
     var videoStream = _yt.videos.streamsClient.get(videoStreamInfo);
 
     var dir = await _getDownloadDirectory();
-    print("Download directory: ${dir.path}");
-
-    var sanitizedTitle = _sanitizeFilename(video.title);
+    var sanitizedTitle = sanitizeFilename(video.title);
     var file = File(path.join(dir.path, '$sanitizedTitle.mp4'));
     var fileStream = file.openWrite();
 
+    var total = videoStreamInfo.size.totalBytes;
+    var downloaded = 0;
+
     await for (var data in videoStream) {
       fileStream.add(data);
-      // Update the progress here if necessary
+      downloaded += data.length;
+      _ref
+          .read(downloadProgressProvider(file.path).notifier)
+          .setProgress(downloaded / total);
     }
 
     await fileStream.flush();
     await fileStream.close();
 
     await _saveDownloadRecord(file.path);
+    _ref.read(downloadProgressProvider(file.path).notifier).reset();
 
     if (context.mounted) {
       Fluttertoast.showToast(
           msg: "MP4 downloaded to ${file.path}",
           toastLength: Toast.LENGTH_LONG,
           gravity: ToastGravity.BOTTOM);
-
-      Navigator.push(context,
-          MaterialPageRoute(builder: (context) => const DownloadsScreen()));
     }
   }
 
@@ -140,9 +161,5 @@ class DownloadService {
       await downloadDir.create(recursive: true);
     }
     return downloadDir;
-  }
-
-  String _sanitizeFilename(String filename) {
-    return filename.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
   }
 }
