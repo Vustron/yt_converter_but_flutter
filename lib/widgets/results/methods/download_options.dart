@@ -2,12 +2,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 
-// services
-import 'package:yt_converter/services/download.dart';
+// methods
+import 'package:yt_converter/widgets/results/methods/progress.dart';
 
 Future<void> downloadOptions(
-    BuildContext context, String videoUrl, WidgetRef ref) {
-  return showDialog(
+    BuildContext context, String videoUrl, WidgetRef ref) async {
+  void showDownloadProgressIfMounted(bool isMP3) {
+    if (context.mounted) {
+      showDownloadProgress(context, ref, videoUrl, isMP3);
+    }
+  }
+
+  final result = await showDialog<bool>(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
@@ -22,12 +28,7 @@ Future<void> downloadOptions(
           mainAxisSize: MainAxisSize.min,
           children: [
             ElevatedButton.icon(
-              onPressed: () {
-                ref
-                    .read(downloadServiceProvider)
-                    .downloadMp3(videoUrl, context);
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context, true),
               icon: const Icon(Icons.music_note, color: Colors.black),
               label: const Text(
                 'Download MP3',
@@ -35,12 +36,7 @@ Future<void> downloadOptions(
               ),
             ),
             ElevatedButton.icon(
-              onPressed: () {
-                ref
-                    .read(downloadServiceProvider)
-                    .downloadMp4(videoUrl, context);
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context, false),
               icon: const Icon(Icons.video_library, color: Colors.black),
               label: const Text(
                 'Download MP4',
@@ -52,4 +48,8 @@ Future<void> downloadOptions(
       );
     },
   );
+
+  if (result != null) {
+    showDownloadProgressIfMounted(result);
+  }
 }

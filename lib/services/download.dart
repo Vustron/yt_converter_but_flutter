@@ -12,7 +12,7 @@ import 'dart:io';
 
 final downloadProgressProvider =
     StateNotifierProvider.family<DownloadProgressNotifier, double?, String>(
-        (ref, filePath) => DownloadProgressNotifier());
+        (ref, videoUrl) => DownloadProgressNotifier());
 
 class DownloadProgressNotifier extends StateNotifier<double?> {
   DownloadProgressNotifier() : super(null);
@@ -82,7 +82,7 @@ class DownloadService {
       fileStream.add(data);
       downloaded += data.length;
       _ref
-          .read(downloadProgressProvider(file.path).notifier)
+          .read(downloadProgressProvider(videoUrl).notifier)
           .setProgress(downloaded / total);
     }
 
@@ -90,7 +90,7 @@ class DownloadService {
     await fileStream.close();
 
     await _saveDownloadRecord(file.path);
-    _ref.read(downloadProgressProvider(file.path).notifier).reset();
+    _ref.read(downloadProgressProvider(videoUrl).notifier).reset();
 
     if (context.mounted) {
       Fluttertoast.showToast(
@@ -136,7 +136,7 @@ class DownloadService {
       fileStream.add(data);
       downloaded += data.length;
       _ref
-          .read(downloadProgressProvider(file.path).notifier)
+          .read(downloadProgressProvider(videoUrl).notifier)
           .setProgress(downloaded / total);
     }
 
@@ -144,7 +144,7 @@ class DownloadService {
     await fileStream.close();
 
     await _saveDownloadRecord(file.path);
-    _ref.read(downloadProgressProvider(file.path).notifier).reset();
+    _ref.read(downloadProgressProvider(videoUrl).notifier).reset();
 
     if (context.mounted) {
       Fluttertoast.showToast(
