@@ -39,7 +39,7 @@ android {
     }
     
     kotlinOptions {
-        jvmTarget = '1.6.0.'
+        jvmTarget = '1.6'
     }
     
     sourceSets {
