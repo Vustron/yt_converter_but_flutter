@@ -18,6 +18,8 @@ import 'package:yt_converter/widgets/downloads/methods/get_records.dart';
 import 'package:yt_converter/widgets/downloads/methods/open_file.dart';
 import 'package:yt_converter/widgets/downloads/methods/icons.dart';
 
+// TODO: 🪲 dli makita sa folder sa file manager sa phone ang mga gipangdownload
+
 class DownloadsScreen extends ConsumerStatefulWidget {
   const DownloadsScreen({super.key});
 
