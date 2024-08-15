@@ -1,10 +1,15 @@
 // utils
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:yt_converter/utils/file_size.dart';
+import 'package:yt_converter/utils/truncate.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 // services
 import 'package:yt_converter/services/download.dart';
+
+// widgets
 import 'package:yt_converter/widgets/downloads/components/appbar.dart';
 
 // methods
@@ -65,6 +70,9 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                 itemBuilder: (context, index) {
                   // get file data
                   final filePath = snapshot.data![index];
+                  final file = File(filePath);
+                  final fileSize = getFileSize(file);
+
                   return Dismissible(
                     key: Key(filePath),
                     direction: DismissDirection.endToStart,
@@ -79,20 +87,35 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                     ),
                     child: Consumer(
                       builder: (context, ref, child) {
+                        // init download progress
                         final progress =
                             ref.watch(downloadProgressProvider(filePath));
+
+                        // init truncate
+                        final truncatedTitle =
+                            truncateText(path.basename(filePath), 31);
+
                         return ListTile(
                           leading: getFileIcon(filePath),
                           title: Text(
-                            path.basename(filePath),
+                            truncatedTitle,
                             style: const TextStyle(fontSize: 16),
                           ),
-                          subtitle: progress != null
-                              ? LinearProgressIndicator(value: progress)
-                              : const Text(
-                                  'Completed',
-                                  style: TextStyle(fontSize: 12),
-                                ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                fileSize,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              progress != null
+                                  ? LinearProgressIndicator(value: progress)
+                                  : const Text(
+                                      'Completed',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                            ],
+                          ),
                           onTap: () => openFile(filePath),
                         );
                       },

@@ -23,7 +23,6 @@ dependencies:
   path: ^1.8.3
   shared_preferences: ^2.3.1
   google_nav_bar: ^5.0.6
-  icons_plus: ^5.0.0
   searchfield: ^1.0.9
   url_launcher: ^6.3.0
   youtube_explode_dart: ^2.1.0

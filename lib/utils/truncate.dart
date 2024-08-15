@@ -1,4 +1,4 @@
-String truncateQuery(String query, int maxLength) {
+String truncateText(String query, int maxLength) {
   if (query.length <= maxLength) {
     return query;
   }

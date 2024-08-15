@@ -7,7 +7,7 @@ AppBar appbar(
   required VoidCallback onHomePressed,
 }) {
   // init truncate
-  final truncatedQuery = truncateQuery(searchQuery, 10);
+  final truncatedQuery = truncateText(searchQuery, 10);
 
   return AppBar(
     title: Text('Results for "$truncatedQuery"'),

@@ -4,6 +4,7 @@
     "cupertino",
     "dotenv",
     "filex",
+    "lerp",
     "muxed",
     "prefs",
     "unfocus"

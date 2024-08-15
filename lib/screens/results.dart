@@ -1,6 +1,7 @@
 // utils
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:yt_converter/utils/truncate.dart';
 import 'package:flutter/material.dart';
 
 // services
@@ -46,11 +47,16 @@ class ResultScreen extends ConsumerWidget {
           : ListView.builder(
               itemCount: searchResults.length,
               itemBuilder: (context, index) {
+                // init video results
                 final video = searchResults[index];
+
+                // init truncate
+                final truncatedTitle = truncateText(video.title, 24);
+
                 return ListTile(
                   leading: Image.network(video.thumbnailUrl),
                   title: Text(
-                    video.title,
+                    truncatedTitle,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,

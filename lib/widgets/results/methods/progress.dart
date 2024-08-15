@@ -1,11 +1,15 @@
+// utils
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'dart:developer';
 import 'dart:async';
+
+// services
 import 'package:yt_converter/services/download.dart';
 
 Future<void> showDownloadProgress(
     BuildContext context, WidgetRef ref, String videoUrl, bool isMP3) async {
+  // init completer
   final completer = Completer<void>();
 
   showDialog(
