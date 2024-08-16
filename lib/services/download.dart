@@ -200,7 +200,7 @@ class DownloadService {
     Directory? directory;
     try {
       if (Platform.isAndroid) {
-        directory = Directory('/storage/emulated/0/Download');
+        directory = Directory('/storage/emulated/0/Download/YTConverter');
       } else if (Platform.isIOS) {
         directory = await getApplicationDocumentsDirectory();
 
