@@ -196,11 +196,28 @@ class DownloadService {
     }
   }
 
-  // download directory method
   Future<Directory?> _getDownloadDirectory() async {
-    if (Platform.isAndroid) {
-      return await getExternalStorageDirectory();
+    Directory? directory;
+    try {
+      if (Platform.isAndroid) {
+        directory = Directory('/storage/emulated/0/Download');
+      } else if (Platform.isIOS) {
+        directory = await getApplicationDocumentsDirectory();
+
+        var appDir = Directory('${directory.path}/YTConverter');
+        if (!await appDir.exists()) {
+          await appDir.create(recursive: true);
+        }
+      }
+    } catch (e) {
+      log('Download error: $e');
+      Fluttertoast.showToast(
+        msg: "Error downloading file: ${e.toString()}",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+      );
+      rethrow;
     }
-    return await getApplicationDocumentsDirectory();
+    return directory;
   }
 }
