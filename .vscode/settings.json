@@ -5,6 +5,7 @@
     "dotenv",
     "filex",
     "lerp",
+    "mipmap",
     "muxed",
     "prefs",
     "unfocus"

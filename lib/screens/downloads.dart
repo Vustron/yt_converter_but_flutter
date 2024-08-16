@@ -18,7 +18,7 @@ import 'package:yt_converter/widgets/downloads/methods/get_records.dart';
 import 'package:yt_converter/widgets/downloads/methods/open_file.dart';
 import 'package:yt_converter/widgets/downloads/methods/icons.dart';
 
-// TODO: 🪲 dli makita sa folder sa file manager sa phone ang mga gipangdownload
+// TODO: fix bug 🪲 , downloaded mp3/mp4 isn't showing on the storage and needs to find it manually so that it can be read by the file manager.
 
 class DownloadsScreen extends ConsumerStatefulWidget {
   const DownloadsScreen({super.key});

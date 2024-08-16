@@ -1,15 +1,18 @@
 // utils
+import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'dart:developer';
 import 'dart:async';
 
 // services
+import 'package:yt_converter/services/notification.dart';
 import 'package:yt_converter/services/download.dart';
 
+// show download progress method
 Future<void> showDownloadProgress(
     BuildContext context, WidgetRef ref, String videoUrl, bool isMP3) async {
-  // init completer
+  //init completer
   final completer = Completer<void>();
 
   showDialog(
@@ -44,24 +47,20 @@ Future<void> showDownloadProgress(
                   else
                     Column(
                       children: [
-                        Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            CircularProgressIndicator(
-                              value: downloadProgress,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Color.lerp(Colors.red, Colors.green,
-                                        downloadProgress) ??
-                                    Colors.blue,
-                              ),
-                            ),
-                            Text(
-                              '${(downloadProgress * 100).toStringAsFixed(0)}%',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                        LinearPercentIndicator(
+                          width: 235.0,
+                          lineHeight: 16.0,
+                          percent: downloadProgress,
+                          backgroundColor: Colors.grey,
+                          progressColor: Color.lerp(
+                                  Colors.red, Colors.green, downloadProgress) ??
+                              Colors.blue,
+                          animation: true,
+                          animateFromLastPercent: true,
+                          center: Text(
+                            '${(downloadProgress * 100).toStringAsFixed(0)}%',
+                            style: const TextStyle(fontSize: 12.0),
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -87,6 +86,13 @@ Future<void> showDownloadProgress(
     }
   } catch (e) {
     log('Download error: $e');
+    // Show error notification
+    final notificationService = ref.read(notificationServiceProvider);
+    await notificationService.showCompletionNotification(
+      id: DateTime.now().millisecondsSinceEpoch % 10000,
+      title: 'Download Failed',
+      body: 'An error occurred during download.',
+    );
   } finally {
     completer.complete();
   }

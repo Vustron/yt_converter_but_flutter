@@ -6,10 +6,12 @@ import 'package:yt_converter/utils/sanitize_filename.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 import 'dart:developer';
 import 'dart:io';
+
+// services
+import 'package:yt_converter/services/notification.dart';
 
 // download progress provider
 final downloadProgressProvider =
@@ -51,6 +53,17 @@ class DownloadService {
       if (!statusStorage.isGranted) {
         statusStorage = await Permission.storage.request();
       }
+
+      // Add this check for Android 10 (API level 29) and above
+      if (await Permission.manageExternalStorage.isRestricted) {
+        var statusManageStorage = await Permission.manageExternalStorage.status;
+        if (!statusManageStorage.isGranted) {
+          statusManageStorage =
+              await Permission.manageExternalStorage.request();
+        }
+        return statusManageStorage.isGranted;
+      }
+
       return statusStorage.isGranted;
     }
     return true;
@@ -73,127 +86,121 @@ class DownloadService {
 
   // download mp3 method
   Future<void> downloadMp3(String videoUrl, BuildContext context) async {
-    if (!await _requestPermissions()) {
-      Fluttertoast.showToast(
-          msg: "Storage permission denied",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM);
-      return;
-    }
-
-    var video = await _yt.videos.get(videoUrl);
-    var manifest = await _yt.videos.streamsClient.getManifest(video.id);
-    var audioStreamInfo = manifest.audioOnly.withHighestBitrate();
-    var audioStream = _yt.videos.streamsClient.get(audioStreamInfo);
-
-    var dir = await _getDownloadDirectory();
-    var sanitizedTitle = sanitizeFilename(video.title);
-    var file = File(path.join(dir.path, '$sanitizedTitle.mp3'));
-    var fileStream = file.openWrite();
-
-    var total = audioStreamInfo.size.totalBytes;
-    var downloaded = 0;
-
-    await for (var data in audioStream) {
-      fileStream.add(data);
-      downloaded += data.length;
-      _ref
-          .read(downloadProgressProvider(videoUrl).notifier)
-          .setProgress(downloaded / total);
-    }
-
-    await fileStream.flush();
-    await fileStream.close();
-
-    await _saveDownloadRecord(file.path);
-    _ref.read(downloadProgressProvider(videoUrl).notifier).reset();
-
-    if (context.mounted) {
-      Fluttertoast.showToast(
-          msg: "MP3 downloaded to ${file.path}",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM);
-    }
+    await _download(videoUrl, context, true);
   }
 
   // download mp4 method
   Future<void> downloadMp4(String videoUrl, BuildContext context) async {
-    if (!await _requestPermissions()) {
-      Fluttertoast.showToast(
-          msg: "Storage permission denied",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM);
-      return;
-    }
+    await _download(videoUrl, context, false);
+  }
 
-    var video = await _yt.videos.get(videoUrl);
+  // download options method
+  Future<void> _download(
+      String videoUrl, BuildContext context, bool isMP3) async {
+    try {
+      // check permissions
+      if (!await _requestPermissions()) {
+        Fluttertoast.showToast(
+            msg: "Storage permission denied",
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.BOTTOM);
+        return;
+      }
 
-    if (video.isLive) {
-      Fluttertoast.showToast(
-          msg:
-              "Cannot download live streams. Please wait until the stream ends and try again.",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM);
-      return;
-    }
+      // get video url
+      var video = await _yt.videos.get(videoUrl);
+      // get metadata
+      var manifest = await _yt.videos.streamsClient.getManifest(video.id);
+      // get stream info if mp3 or mp4
+      var streamInfo = isMP3
+          ? manifest.audioOnly.withHighestBitrate()
+          : manifest.muxed.withHighestBitrate();
+      var stream = _yt.videos.streamsClient.get(streamInfo);
 
-    var manifest = await _yt.videos.streamsClient.getManifest(video.id);
-    var videoStreamInfo = manifest.muxed.withHighestBitrate();
-    var videoStream = _yt.videos.streamsClient.get(videoStreamInfo);
+      Directory? dir = await _getDownloadDirectory();
+      if (dir == null) {
+        throw Exception("Failed to get download directory");
+      }
 
-    var dir = await _getDownloadDirectory();
-    var sanitizedTitle = sanitizeFilename(video.title);
-    var file = File(path.join(dir.path, '$sanitizedTitle.mp4'));
-    var fileStream = file.openWrite();
+      var sanitizedTitle = sanitizeFilename(video.title);
+      var extension = isMP3 ? 'mp3' : 'mp4';
+      var file = File('${dir.path}/$sanitizedTitle.$extension');
 
-    var total = videoStreamInfo.size.totalBytes;
-    var downloaded = 0;
+      var fileStream = file.openWrite();
 
-    await for (var data in videoStream) {
-      fileStream.add(data);
-      downloaded += data.length;
-      _ref
-          .read(downloadProgressProvider(videoUrl).notifier)
-          .setProgress(downloaded / total);
-    }
+      var total = streamInfo.size.totalBytes;
+      var downloaded = 0;
 
-    await fileStream.flush();
-    await fileStream.close();
+      final notificationService = _ref.read(notificationServiceProvider);
+      final notificationId = DateTime.now().millisecondsSinceEpoch % 10000;
 
-    await _saveDownloadRecord(file.path);
-    _ref.read(downloadProgressProvider(videoUrl).notifier).reset();
+      await notificationService.showProgressNotification(
+        id: notificationId,
+        title: 'Downloading ${isMP3 ? "MP3" : "MP4"}',
+        body: 'Starting download...',
+        progress: 0,
+        maxProgress: 100,
+      );
 
-    if (context.mounted) {
-      Fluttertoast.showToast(
-          msg: "MP4 downloaded to ${file.path}",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM);
+      await for (var data in stream) {
+        fileStream.add(data);
+        downloaded += data.length;
+        var progress = downloaded / total;
+        _ref
+            .read(downloadProgressProvider(videoUrl).notifier)
+            .setProgress(progress);
+
+        if (progress % 0.01 < 0.001) {
+          // Update notification every 1%
+          await notificationService.showProgressNotification(
+            id: notificationId,
+            title: 'Downloading ${isMP3 ? "MP3" : "MP4"}',
+            body: 'Progress: ${(progress * 100).toStringAsFixed(0)}%',
+            progress: (progress * 100).toInt(),
+            maxProgress: 100,
+          );
+        }
+      }
+
+      await fileStream.flush();
+      await fileStream.close();
+
+      await _saveDownloadRecord(file.path);
+      _ref.read(downloadProgressProvider(videoUrl).notifier).reset();
+
+      // Update the notification to show completion
+      await notificationService.showCompletionNotification(
+        id: notificationId,
+        title: 'Download Complete',
+        body: '${isMP3 ? "MP3" : "MP4"} downloaded to ${file.path}',
+      );
+
+      // Cancel the progress notification
+      await notificationService.cancelNotification(id: notificationId);
+
+      if (context.mounted) {
+        Fluttertoast.showToast(
+            msg: "${isMP3 ? "MP3" : "MP4"} downloaded to ${file.path}",
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.BOTTOM);
+      }
+    } catch (e) {
+      log('Download error: $e');
+      if (context.mounted) {
+        Fluttertoast.showToast(
+            msg: "Error downloading file: ${e.toString()}",
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.BOTTOM);
+      }
+      rethrow; // This will allow the error to be caught in the showDownloadProgress method
     }
   }
 
-  // download directory
-  Future<Directory> _getDownloadDirectory() async {
-    Directory? directory;
-    try {
-      if (Platform.isAndroid) {
-        // For Android, use the Downloads directory
-        directory = Directory('/storage/emulated/0/Download');
-      } else if (Platform.isIOS) {
-        // For iOS, we'll use the Documents directory
-        directory = await getApplicationDocumentsDirectory();
-      }
-
-      // Create a subdirectory for our app if it doesn't exist
-      var appDir = Directory('${directory!.path}/YTConverter');
-      if (!await appDir.exists()) {
-        await appDir.create(recursive: true);
-      }
-
-      return appDir;
-    } catch (e) {
-      log('Failed to get download directory: $e');
-      // Fallback to the app's directory if we can't access the Downloads folder
-      return await getApplicationDocumentsDirectory();
+  // download directory method
+  Future<Directory?> _getDownloadDirectory() async {
+    if (Platform.isAndroid) {
+      return await getExternalStorageDirectory();
     }
+    return await getApplicationDocumentsDirectory();
   }
 }

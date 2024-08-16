@@ -8,6 +8,9 @@ import 'package:flutter/services.dart';
 // screens
 import 'package:yt_converter/screens/splash.dart';
 
+// services
+import 'package:yt_converter/services/notification.dart';
+
 // configs
 import 'config/appbar_theme.dart';
 
@@ -31,8 +34,20 @@ void main() async {
   ]).then((value) async {
     // consume dotenv
     await dotenv.load(fileName: ".env");
+
+    // Create a ProviderContainer
+    final container = ProviderContainer();
+
+    // Initialize notification service
+    await container.read(notificationServiceProvider).initNotification();
+
     // run app
-    runApp(const ProviderScope(child: App()));
+    runApp(
+      UncontrolledProviderScope(
+        container: container,
+        child: const App(),
+      ),
+    );
   });
 }
 
