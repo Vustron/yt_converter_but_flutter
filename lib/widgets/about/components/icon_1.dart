@@ -42,8 +42,8 @@ Positioned icon_1() {
                   borderRadius: BorderRadius.circular(25),
                   child: Image.asset(
                     'assets/icons/github.png',
-                    height: 50,
-                    width: 50,
+                    height: 35,
+                    width: 35,
                   ),
                 ),
                 const SizedBox(width: 10),

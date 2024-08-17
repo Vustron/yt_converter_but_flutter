@@ -15,8 +15,8 @@ import 'package:yt_converter/services/notification.dart';
 
 // download progress provider
 final downloadProgressProvider =
-    StateNotifierProvider.family<DownloadProgressNotifier, double?, String>(
-        (ref, videoUrl) => DownloadProgressNotifier());
+    StateNotifierProvider<DownloadProgressNotifier, double?>(
+        (ref) => DownloadProgressNotifier());
 
 class DownloadProgressNotifier extends StateNotifier<double?> {
   // init progress notifier
@@ -117,14 +117,10 @@ class DownloadService {
           : manifest.muxed.withHighestBitrate();
       var stream = _yt.videos.streamsClient.get(streamInfo);
 
-      Directory? dir = await _getDownloadDirectory();
-      if (dir == null) {
-        throw Exception("Failed to get download directory");
-      }
-
+      var dir = await _getDownloadDirectory();
       var sanitizedTitle = sanitizeFilename(video.title);
       var extension = isMP3 ? 'mp3' : 'mp4';
-      var file = File('${dir.path}/$sanitizedTitle.$extension');
+      var file = File('${dir!.path}/$sanitizedTitle.$extension');
 
       var fileStream = file.openWrite();
 
@@ -146,9 +142,7 @@ class DownloadService {
         fileStream.add(data);
         downloaded += data.length;
         var progress = downloaded / total;
-        _ref
-            .read(downloadProgressProvider(videoUrl).notifier)
-            .setProgress(progress);
+        _ref.read(downloadProgressProvider.notifier).setProgress(progress);
 
         if (progress % 0.01 < 0.001) {
           // Update notification every 1%
@@ -166,7 +160,7 @@ class DownloadService {
       await fileStream.close();
 
       await _saveDownloadRecord(file.path);
-      _ref.read(downloadProgressProvider(videoUrl).notifier).reset();
+      _ref.read(downloadProgressProvider.notifier).reset();
 
       // Update the notification to show completion
       await notificationService.showCompletionNotification(
@@ -192,27 +186,41 @@ class DownloadService {
             toastLength: Toast.LENGTH_LONG,
             gravity: ToastGravity.BOTTOM);
       }
+      _ref.read(downloadProgressProvider.notifier).reset();
       rethrow; // This will allow the error to be caught in the showDownloadProgress method
     }
   }
 
+  // get download directory method
   Future<Directory?> _getDownloadDirectory() async {
     Directory? directory;
-    try {
-      if (Platform.isAndroid) {
-        directory = Directory('/storage/emulated/0/Download/YTConverter');
-      } else if (Platform.isIOS) {
-        directory = await getApplicationDocumentsDirectory();
 
-        var appDir = Directory('${directory.path}/YTConverter');
-        if (!await appDir.exists()) {
-          await appDir.create(recursive: true);
-        }
+    try {
+      switch (Platform.operatingSystem) {
+        case 'android':
+          directory = await getExternalStorageDirectory();
+          if (directory != null) {
+            directory = Directory('/storage/emulated/0/Download/YTConverter');
+          } else {
+            directory = await getApplicationDocumentsDirectory();
+            directory = Directory('${directory.path}/YTConverter');
+          }
+          break;
+        case 'ios':
+          directory = await getApplicationDocumentsDirectory();
+          directory = Directory('${directory.path}/YTConverter');
+          break;
+        default:
+          throw UnsupportedError('Unsupported platform');
+      }
+
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
       }
     } catch (e) {
-      log('Download error: $e');
+      log('Download directory error: $e');
       Fluttertoast.showToast(
-        msg: "Error downloading file: ${e.toString()}",
+        msg: "Error setting up download directory: ${e.toString()}",
         toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.BOTTOM,
       );

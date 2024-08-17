@@ -34,7 +34,7 @@ dependencies:
   share_plus: ^10.0.1
   flutter_local_notifications: ^17.2.2
   percent_indicator: ^4.2.3
-  file_picker: ^5.3.2
+  media_scanner: ^2.1.0
   
 dev_dependencies:
   flutter_native_splash: ^2.3.8

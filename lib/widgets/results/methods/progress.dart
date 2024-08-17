@@ -29,7 +29,7 @@ Future<void> showDownloadProgress(
           ),
           content: Consumer(
             builder: (context, ref, _) {
-              final progress = ref.watch(downloadProgressProvider(videoUrl));
+              final progress = ref.watch(downloadProgressProvider);
               final isPreparing = progress == null;
               final downloadProgress = progress ?? 0.0;
 

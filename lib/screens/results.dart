@@ -11,72 +11,60 @@ import 'package:yt_converter/services/search.dart';
 import 'package:yt_converter/screens/root.dart';
 
 // widgets
+import 'package:yt_converter/widgets/results/components/download_progress.dart';
+import 'package:yt_converter/widgets/results/components/result_item.dart';
 import 'package:yt_converter/widgets/results/components/appbar.dart';
 
-// methods
-import 'package:yt_converter/widgets/results/methods/download_options.dart';
-
 class ResultScreen extends ConsumerWidget {
-  // init search query
   final String searchQuery;
 
-  // init result constructor
   const ResultScreen({Key? key, required this.searchQuery}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // init search state
     final searchState = ref.watch(searchServiceProvider);
-
-    // init search results state
     final searchResults = searchState.videos;
 
     return Scaffold(
       appBar: appbar(searchQuery, onHomePressed: () {
         ref.read(searchServiceProvider.notifier).clearSearch();
         Navigator.pushReplacement(
-            context,
-            PageTransition(
-              type: PageTransitionType.scale,
-              alignment: Alignment.bottomCenter,
-              child: const RootScreen(),
-            ));
+          context,
+          PageTransition(
+            type: PageTransitionType.scale,
+            alignment: Alignment.bottomCenter,
+            child: const RootScreen(),
+          ),
+        );
       }),
-      body: searchState.isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.black))
-          : ListView.builder(
-              itemCount: searchResults.length,
-              itemBuilder: (context, index) {
-                // init video results
-                final video = searchResults[index];
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              Expanded(
+                child: searchState.isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: Colors.black))
+                    : ListView.builder(
+                        itemCount: searchResults.length,
+                        itemBuilder: (context, index) {
+                          final video = searchResults[index];
+                          final truncatedTitle = truncateText(video.title, 24);
 
-                // init truncate
-                final truncatedTitle = truncateText(video.title, 24);
-
-                return ListTile(
-                  leading: Image.network(video.thumbnailUrl),
-                  title: Text(
-                    truncatedTitle,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  subtitle: Text(
-                    video.channelTitle,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                  onTap: () {
-                    String videoUrl =
-                        'https://www.youtube.com/watch?v=${video.videoId}';
-                    downloadOptions(context, videoUrl, ref);
-                  },
-                );
-              },
-            ),
+                          return resultItem(
+                              video, truncatedTitle, context, ref);
+                        },
+                      ),
+              ),
+              const SizedBox(
+                height: 80,
+                child: DownloadProgressSection(),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
